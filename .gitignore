@@ -1,4 +1,9 @@
-dev/test-output/
+# Dev-time files — local-only, never committed.
+# Public GitHub holds ONLY the installable skill (exa-api/) + README.md.
+CLAUDE.md
+dev/
+
+# Build / OS noise
 __pycache__/
 *.pyc
 .DS_Store
