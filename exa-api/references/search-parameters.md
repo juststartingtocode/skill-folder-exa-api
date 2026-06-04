@@ -19,8 +19,8 @@ passes straight through.
 | Exa param | Flag | Notes |
 |---|---|---|
 | `query` | `--query` | required (or `--batch`) |
-| `type` | `--type` | no value restriction; known: instant, fast, auto, neural, keyword, deep-lite, deep, deep-reasoning |
-| `category` | `--category` | company, people, research paper, news, financial report, … |
+| `type` | `--type` | no value restriction; documented: instant, fast, auto, deep-lite, deep, deep-reasoning. Legacy neural/keyword still work (see search-types.md) |
+| `category` | `--category` | company, people, research paper, news, financial report, **personal site** |
 | `numResults` | `--num-results` | 1–100 |
 | `includeDomains` | `--include-domains` | comma-separated |
 | `excludeDomains` | `--exclude-domains` | comma-separated |
@@ -42,13 +42,17 @@ passes straight through.
 ## `contents` sub-fields
 
 Convenience flags: `--text`, `--highlights`, `--highlights-query`, `--summary`,
-`--summary-query`, `--max-characters`, `--livecrawl`.
+`--summary-query`, `--max-characters`, `--max-age-hours`, `--subpages`,
+`--livecrawl`.
+
+> **`livecrawl` is deprecated by Exa** (and its `preferred` value) — use
+> **`--max-age-hours`** instead: `-1`..`720` hours, `0` = always fetch fresh.
+> The `--livecrawl` flag still works for back-compat.
 
 For everything else under `contents` — `text.includeHtmlTags`, `text.verbosity`
 (compact/standard/full), `text.includeSections`/`excludeSections`,
 `summary.schema`, `extras.{links,imageLinks,richLinks,richImageLinks,codeBlocks}`,
-`livecrawlTimeout`, `maxAgeHours`, `subpages`, `subpageTarget` — use
-**`--contents-json`** with the full object:
+`livecrawlTimeout`, `subpageTarget` — use **`--contents-json`** with the full object:
 
 ```bash
 python exa.py search --query "..." --type auto \
@@ -68,5 +72,15 @@ python exa.py search --query "..." --extra-json '{"someNewExaParam":true}'
 python exa.py search --query "..." --contents-json '{"summary":{"schema":{...}},"extras":{"imageLinks":5}}'
 ```
 
-`/answer` and `research` also accept `--extra-json` / `--extra-json-file` for the
-same guarantee on their endpoints.
+All five subcommands (`search`, `contents`, `answer`, `research`, `agent`) accept
+`--extra-json` / `--extra-json-file` for the same full-parity guarantee on their
+endpoints.
+
+## Deprecated response fields
+
+Exa marks these `/search` response fields **deprecated** — don't rely on them:
+- `resolvedSearchType` (often empty anyway) — read the engine off `cost.search.*`.
+- `context` — superseded by `output` / structured synthesis.
+
+The normalized output no longer surfaces `resolvedSearchType`; use `--raw` if you
+need Exa's full body.

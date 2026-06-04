@@ -5,9 +5,11 @@
 | Call | Cost | Notes |
 |---|---|---|
 | `answer` | ~$0.005 | flat; no itemized search line |
-| `search` auto/neural/fast | ~$0.007 | `cost.search.neural` |
+| `contents` | ~$0.002 | `cost.contents.{text,summary}`; per-URL, cheap (no search) |
+| `search` auto/neural/fast | ~$0.007 | `cost.search.neural` (or `.keyword`) |
 | `search deep-reasoning` + schema | ~$0.017 | 12–20 results, ~17s |
-| `research` (low effort) | ~$0.025 | `agentCompute` + `search` itemized |
+| `research` (exa-research-fast) | ~$0.006 | itemized: `numPages` + `numSearches` + `reasoningTokens`; pro tier costs more |
+| `agent` (low effort, beta) | ~$0.025 | `agentCompute` + `search` (+ `emails`/`phoneNumbers`) itemized |
 
 Billing is computed from Exa's server-side usage counters, not the `cost` object
 in the response — treat `cost` as an estimate.
@@ -43,8 +45,9 @@ in the response — treat `cost` as an estimate.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `MISSING_BETA_HEADER` on `research` | no `Exa-Beta` header | handled by script; if overriding, pass a valid `--beta-token` |
-| 400 "Unrecognized key 'instructions'" | wrong field on agent launch | use `query`, not `instructions` (script does this) |
+| `MISSING_BETA_HEADER` on `agent` | no `Exa-Beta` header (agent API only) | handled by script; if overriding, pass a valid `--beta-token`. `research` (/research/v1) needs NO beta header |
+| 400 "Unrecognized key 'query'" on `research` | `/research/v1` wants `instructions` | use `--instructions` (or its alias `--query`); the script maps both to `instructions` |
+| 404 `Cannot POST /research/tasks` | wrong research path | the live path is `/research/v1` (script uses it); `/research/tasks` and `/research/v0/tasks` are not it |
 | HTTP 524 | Exa upstream timeout | retry (script auto-retries) |
 | empty `resolvedSearchType` | Exa often omits it | read engine from `cost.search.*` instead |
 | structured arrays contain `"citations [1,2]"` | grounding leakage | filter non-content entries (see structured-output.md) |

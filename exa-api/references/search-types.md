@@ -8,11 +8,20 @@ and cost for reasoning depth. Pick the cheapest one that answers your need.
 | `instant` | ~250 ms | fastest index lookup | real-time chat/voice autocomplete |
 | `fast` | ~450 ms | speed with minimal quality loss | high-volume, latency-sensitive |
 | `auto` | ~1 s | **default**; picks neural vs keyword per query | general retrieval, keyword discovery |
-| `neural` | ~1 s | embeddings/semantic ("find pages *like* this") | conceptual / "sites similar to" queries |
-| `keyword` | ~1 s | literal term matching | exact terms, names, error strings |
 | `deep-lite` | ~4 s | lightweight multi-step retrieval | light synthesis, cheaper than deep |
 | `deep` | 4–15 s | multi-step reasoning retrieval | complex queries needing several hops |
 | `deep-reasoning` | 12–40 s | heaviest synthesized reasoning | hard research; structured grounded output |
+
+The six above are the **currently documented** types. `auto` is the default and
+internally chooses neural (semantic) vs keyword (literal) per query — so you rarely
+need to ask for those directly.
+
+**Legacy (undocumented but still functional):** `neural` (embeddings/semantic,
+"find pages *like* this") and `keyword` (literal term matching). Exa dropped them
+from the docs and folded them into `auto`, but `POST /search` **still accepts both**
+(verified live — they return `cost.search.neural` / `cost.search.keyword`). The
+`--type` flag has no value restriction, so they keep working; prefer `auto` for new
+code and only force `neural`/`keyword` when you specifically need that engine.
 
 ## Which billing path did I get?
 

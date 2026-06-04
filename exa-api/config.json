@@ -1,6 +1,7 @@
 {
   "base_url": "https://api.exa.ai",
   "beta_token": "agent-2026-05-07",
+  "research_model": "exa-research",
   "rate_limit": 5,
   "timeout": 180,
   "default_search_type": "auto"

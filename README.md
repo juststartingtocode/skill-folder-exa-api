@@ -1,9 +1,9 @@
 # Exa API Skill — a reliable wrapper for the Exa web search & research API
 
 > An installable AI-agent **skill** (and standalone Python CLI) that wraps the
-> [Exa](https://exa.ai) API — **search, answer, and deep research** — behind one
-> dependable entrypoint, so you stop rediscovering which endpoint, which search
-> type, and which gotcha you needed.
+> [Exa](https://exa.ai) API — **search, contents, answer, research, and agent** —
+> behind one dependable entrypoint, so you stop rediscovering which endpoint, which
+> search type, and which gotcha you needed.
 
 [![Install with npx skills](https://img.shields.io/badge/install-npx%20skills-black)](https://skills.sh)
 ![Python](https://img.shields.io/badge/python-3.8%2B-blue)
@@ -11,18 +11,19 @@
 
 **Keywords:** Exa API · Exa AI · web search API · AI agent skill · Claude Code skill ·
 LLM retrieval · RAG · deep research agent · structured output · neural search ·
-Python Exa wrapper · `/search` `/answer` `/agent` endpoints.
+Python Exa wrapper · `/search` `/contents` `/answer` `/research/v1` `/agent` endpoints.
 
 ---
 
 ## Why this exists
 
-The Exa API is powerful but has a real learning curve: three different products
-(`/search`, `/answer`, `/agent/runs`), a ladder of search types (`auto`, `fast`,
-`neural`, `keyword`, `deep`, `deep-reasoning`…), structured-output schemas with
-undocumented limits, an async research agent that needs a beta header, plus
+The Exa API is powerful but has a real learning curve: several products
+(`/search`, `/contents`, `/answer`, the `/research/v1` Research API, and the beta
+`/agent/runs`), a ladder of search types (`auto`, `fast`, `deep`,
+`deep-reasoning`…), structured-output schemas with undocumented limits, two
+different async research surfaces (one of which needs a beta header), plus
 Windows/encoding pitfalls that silently mangle JSON payloads. Most people burn
-hours rediscovering all of this.
+hours rediscovering all of this — and the endpoints keep moving.
 
 This skill distills that hard-won know-how into **one script + focused reference
 docs**, so any agent (or you, from the terminal) can call Exa correctly the first
@@ -31,25 +32,29 @@ response parsing — and leaves the domain content (your prompts and schemas) to
 
 ## What you get
 
-- **One entrypoint, three modes** — `search`, `answer`, `research` in a single
-  `exa.py`. No SDK to learn.
+- **One entrypoint, five modes** — `search`, `contents`, `answer`, `research`,
+  `agent` in a single `exa.py`. No SDK to learn.
 - **Full `/search` coverage** — every Exa search parameter has a flag, plus
   `--extra-json` / `--contents-json` escape hatches for anything new.
+- **Standalone contents extraction** — crawl/extract text, summaries, highlights,
+  and links for URLs you already have, via `/contents`.
 - **Deep-reasoning structured output** — pass a `systemPrompt` + `outputSchema`
   (as files) and get synthesized, grounded, per-field-cited JSON.
 - **Parallel batch search** — run many queries at once, rate-limited and retried.
-- **Async Research Agent** — launch, poll, and collect long-running research runs
-  (handles the required `Exa-Beta` header for you).
+- **Exa Research API** — launch, poll, and collect `/research/v1` runs with a chosen
+  model tier; plus the beta Agent API for enrichment/list-building.
 - **Safe auth** — your API key is read at runtime from an env var or your local
   config. It is never hardcoded, logged, or committed.
-- **Reference docs for every knob** — search types, parameters, structured output,
-  answer, research agent, and a cost/limits/gotchas cheat sheet.
+- **Reference docs for every knob** — search types, parameters, contents, structured
+  output, answer, research/agent, and a cost/limits/gotchas cheat sheet.
 
 | Mode | Subcommand | Exa endpoint | Returns |
 |---|---|---|---|
 | Web pages for a query (retrieval), optionally structured | `search` | `POST /search` | results list, or structured `output` if you pass a schema |
+| Extract contents for URLs you already have | `contents` | `POST /contents` | text/summary/highlights/links per URL + statuses |
 | One cited answer, zero config | `answer` | `POST /answer` | answer string/dict + citations |
-| A long-running agent that searches, reasons, and enriches | `research` | `POST /agent/runs` | async run → text + structured + grounding |
+| Async agentic research from instructions | `research` | `POST /research/v1` | run → `output.parsed`/`content` + citations |
+| Multi-step enrichment / list-building (beta) | `agent` | `POST /agent/runs` | async run → text + structured + grounding |
 
 ## Install (as an agent skill)
 
@@ -75,6 +80,9 @@ export EXA_API_KEY=your-exa-api-key            # get one at https://exa.ai
 python skill-folder-exa-api/exa-api/scripts/exa.py \
     search --query "tummy tuck recovery" --type auto --num-results 10 --pretty
 
+# Extract contents for URLs you already have
+python .../exa.py contents --urls "https://a.com/x,https://b.com/y" --text --summary --pretty
+
 # A quick cited answer
 python .../exa.py answer --query "What is the capital of Australia?" --pretty
 
@@ -82,8 +90,11 @@ python .../exa.py answer --query "What is the capital of Australia?" --pretty
 python .../exa.py search --query "..." --type deep-reasoning \
     --system-prompt-file prompt.txt --output-schema-file schema.json --pretty
 
-# Async research agent
-python .../exa.py research --query "Compare X and Y; cite sources" --effort high --pretty
+# Async Research API (instructions + model tier)
+python .../exa.py research --instructions "Compare X and Y; cite sources" --model exa-research --pretty
+
+# Beta Agent API (enrichment / list-building)
+python .../exa.py agent --query "Find 10 Miami clinics with emails" --effort high --pretty
 ```
 
 **Auth** resolves automatically: the `EXA_API_KEY` environment variable first, then
@@ -104,9 +115,10 @@ On-demand reference docs in [`exa-api/references/`](exa-api/references/):
 |---|---|
 | `search-types.md` | Choosing a `--type` — latency, cost, when to use each |
 | `search-parameters.md` | The complete param→flag map + the `--extra-json` escape hatch |
+| `contents.md` | The `/contents` endpoint — fields, statuses, when vs `search` |
 | `structured-output.md` | Building `systemPrompt` + `outputSchema`; the maxed deep-reasoning recipe |
 | `answer.md` | Using `/answer` and its limits |
-| `research-agent.md` | The async Agent API — launch/poll/cancel, effort, beta header |
+| `research-agent.md` | `research` (`/research/v1`) vs `agent` (`/agent/runs` beta) — models, effort, enrichment |
 | `cost-limits-gotchas.md` | Pricing tells, rate limits, Windows/encoding gotchas, error→fix table |
 
 ## Layout
@@ -114,8 +126,8 @@ On-demand reference docs in [`exa-api/references/`](exa-api/references/):
 ```
 exa-api/                 # the installable skill (this is what npx detects)
   SKILL.md               # orchestrator: which subcommand, how to run, doc index
-  config.json            # base URL, beta token, rate limit, timeout, default type
-  scripts/exa.py         # the single entrypoint: search | answer | research
+  config.json            # base URL, beta token, research model, rate limit, timeout, default type
+  scripts/exa.py         # the single entrypoint: search | contents | answer | research | agent
   references/            # the know-how docs the agent reads on demand
 ```
 
